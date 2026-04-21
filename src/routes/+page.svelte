@@ -1,120 +1,117 @@
 <script>
-    import {createClient} from '@supabase/supabase-js';
-    import {orderBy} from 'lodash-es';
-    import {subDays, subHours, format, parseJSON, formatISO, formatISO9075,} from 'date-fns';
-    import {onMount} from 'svelte';
-    import 'chartist/dist/index.css';
-    import moment from 'moment';
-    import Chart from 'chart.js/auto'
-    import {Colors} from 'chart.js';
-    import 'chartjs-adapter-date-fns';
+    import { createClient } from "@supabase/supabase-js";
+    import { subHours, parseJSON } from "date-fns";
+    import { onMount } from "svelte";
+    import Chart from "chart.js/auto";
+    import { Colors } from "chart.js";
+    import "chartjs-adapter-date-fns";
 
     Chart.register(Colors);
 
-    const key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndmcHBscGppeXN6ZHdwcmdzcGJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDYzMzU3NzEsImV4cCI6MjAyMTkxMTc3MX0.FFWtgNmZUBl_YyBITsPdioQQo2mSErNX2ty5WavOyVc'
-    const supabaseClient = createClient('https://wfpplpjiyszdwprgspbo.supabase.co', key)
+    export let params;
+
+    const supabaseClient = createClient(
+        "https://wfpplpjiyszdwprgspbo.supabase.co",
+        import.meta.env.VITE_SUPABASE_KEY,
+    );
 
     const run = async () => {
-        const Chartist = await import('chartist')
+        // Filter using a start data
+        const now = new Date();
 
-        const now = new Date()
+        // Start date is now, minus 8 hours
         const a = subHours(now, 8);
 
-        let response = await supabaseClient.from('air-quality-readings').select()
+        let response = await supabaseClient
+            .from(import.meta.env.VITE_SUPABASE_TABLE)
+            .select();
         // .filter('created_at', 'gte', a.toISOString())
 
-        let data = response.data
-        let error = response.error
+        let data = response.data || [];
+        let error = response.error;
 
         if (error) {
-            console.log(error)
+            console.log("Database is unavailable.");
+            console.log(`Error: ${error.message}`);
         }
 
-        if (!data) {
-            data = []
-        }
+        console.log(`Got ${data.length} records`);
 
-        // const formatString = 'yyyy-MM-dd'
-        const formatString = 'yy-MM-dd H:mm'
+        const formatDate = (value) => parseJSON(value);
 
-        console.log(`Got ${data.length} records`)
-
-        const formatDate = value => parseJSON(value)
-
-        Chart.defaults.backgroundColor = 'dodgerblue';
-        Chart.defaults.borderColor = 'grey';
-        Chart.defaults.color = 'navy';
+        Chart.defaults.backgroundColor = "dodgerblue";
+        Chart.defaults.borderColor = "grey";
+        Chart.defaults.color = "navy";
         Chart.defaults.font.size = 10;
 
-        new Chart(
-            document.getElementById('acquisitions'),
-            {
-                type: 'line',
-                options: {
-                    parsing: false,
-                    animation: true,
-                    plugins: {
-                        title: {
-                            display: true,
-                            text: 'Test',
-                        },
-                        legend: {
-                            display: true
-                        },
-                        tooltip: {
-                            enabled: true
-                        }
+        const el = document.getElementById("data");
+
+        new Chart(el, {
+            type: "line",
+            options: {
+                parsing: false,
+                animation: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: "Test",
                     },
-                    layout: {
-                        padding: 5
+                    legend: {
+                        display: true,
                     },
-                    scales: {
-                        x: {
-                            type: 'time',
-                            time: {
-                                unit: 'hour',
-                                parser(e) {
-                                    // console.log(e)
-                                    return e
-                                },
-                                // displayFormats: {
-                                //     day: 'MM DD'
-                                // }
-                            }
-                        },
-                        y: {
-                            suggestedMin: 70,
-                            suggestedMax: 73,
-                        },
+                    tooltip: {
+                        enabled: true,
                     },
                 },
-                data: {
-                    labels: data.map(row => row.created_at),
-                    datasets: [
-                        {
-                            label: 'Temperature',
-                            data: data.map(row => {
-                                return {
-                                    x: parseJSON(row.created_at),
-                                    y: row.temperature,
-                                }
-                            }),
-                            // borderColor: 'red',
-                            // backgroundColor: 'maroon',
-                            // fill: false,
-                        }
-                    ]
-                }
-            }
-        );
-    }
+                layout: {
+                    padding: 5,
+                },
+                scales: {
+                    x: {
+                        type: "time",
+                        time: {
+                            unit: "hour",
+                            parser(e) {
+                                // console.log(e)
+                                return e;
+                            },
+                            // displayFormats: {
+                            //     day: 'MM DD'
+                            // }
+                        },
+                    },
+                    y: {
+                        suggestedMin: 70,
+                        suggestedMax: 73,
+                    },
+                },
+            },
+            data: {
+                labels: data.map((row) => row.created_at),
+                datasets: [
+                    {
+                        label: "Temperature",
+                        data: data.map((row) => {
+                            return {
+                                x: parseJSON(row.created_at),
+                                y: row.temperature,
+                            };
+                        }),
+                        // borderColor: 'red',
+                        // backgroundColor: 'maroon',
+                        // fill: false,
+                    },
+                ],
+            },
+        });
+    };
 
     onMount(async () => {
-        await run()
-    })
-
+        // pull the data once Svelte component loads
+        await run();
+    });
 </script>
 
 <div style="width: 800px;">
-    <canvas id="acquisitions"></canvas>
+    <canvas id="data" width="800" height="500" />
 </div>
