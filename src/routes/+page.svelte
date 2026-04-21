@@ -10,9 +10,12 @@
 
     export let params;
 
+    const DB_KEY = import.meta.env.VITE_SUPABASE_KEY
+    const DB_TABLE = import.meta.env.VITE_SUPABASE_TABLE
+
     const supabaseClient = createClient(
         "https://wfpplpjiyszdwprgspbo.supabase.co",
-        import.meta.env.VITE_SUPABASE_KEY,
+        DB_KEY,
     );
 
     const run = async () => {
@@ -24,7 +27,7 @@
 
         let response = await supabaseClient
             .from(import.meta.env.VITE_SUPABASE_TABLE)
-            .select();
+            .select(DB_TABLE);
         // .filter('created_at', 'gte', a.toISOString())
 
         let data = response.data || [];
