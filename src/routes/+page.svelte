@@ -49,6 +49,7 @@
 
         const el = document.getElementById("data");
 
+        // currently only maps temperature, but other data should be in the table
         new Chart(el, {
             type: "line",
             options: {
